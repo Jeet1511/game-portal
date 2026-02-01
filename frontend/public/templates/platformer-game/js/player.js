@@ -1,6 +1,6 @@
-// Player Class
+// Enhanced Player Class with Pixel Art
 class Player {
-    constructor(x, y) {
+    constructor(x, y, particleSystem) {
         this.x = x;
         this.y = y;
         this.width = CONFIG.player.width;
@@ -11,72 +11,61 @@ class Player {
         this.jumpPower = CONFIG.player.jumpPower;
         this.gravity = CONFIG.player.gravity;
         this.isJumping = false;
-        this.color = CONFIG.player.color;
+        this.particleSystem = particleSystem;
+
+        // Animation state
+        this.facingRight = true;
+        this.state = 'idle';
     }
 
     draw(ctx) {
-        // Shadow
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-        ctx.shadowBlur = 8;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 4;
-
-        // Body gradient
-        const gradient = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.height);
-        gradient.addColorStop(0, '#FF8E8E');
-        gradient.addColorStop(0.5, '#FF6B6B');
-        gradient.addColorStop(1, '#EE5A6F');
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-
-        // Reset shadow
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-
-        // Border
-        ctx.strokeStyle = '#C0392B';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
-
-        // Eyes with glow
-        ctx.fillStyle = 'white';
-        ctx.beginPath();
-        ctx.arc(this.x + 14, this.y + 14, 5, 0, Math.PI * 2);
-        ctx.arc(this.x + 26, this.y + 14, 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Pupils
-        ctx.fillStyle = 'black';
-        ctx.beginPath();
-        ctx.arc(this.x + 14, this.y + 14, 2, 0, Math.PI * 2);
-        ctx.arc(this.x + 26, this.y + 14, 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Smile
-        ctx.strokeStyle = '#2C3E50';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(this.x + this.width / 2, this.y + 22, 8, 0, Math.PI);
-        ctx.stroke();
+        // Use pixel art character
+        PixelArt.drawPixelCharacter(ctx, this.x, this.y, 2, this.facingRight, this.state);
     }
 
-    update(keys, platforms) {
+    update(keys, platforms, deltaTime = 16, touchInput = null) {
+        // Combine keyboard and touch input
+        const input = {
+            left: keys['ArrowLeft'] || (touchInput && touchInput.left),
+            right: keys['ArrowRight'] || (touchInput && touchInput.right),
+            jump: keys['ArrowUp'] || keys[' '] || (touchInput && touchInput.jump)
+        };
+
         // Horizontal movement
-        if (keys['ArrowLeft']) this.velocityX = -this.speed;
-        else if (keys['ArrowRight']) this.velocityX = this.speed;
-        else this.velocityX = 0;
+        if (input.left) {
+            this.velocityX = -this.speed;
+            this.facingRight = false;
+            this.state = 'walk';
+        } else if (input.right) {
+            this.velocityX = this.speed;
+            this.facingRight = true;
+            this.state = 'walk';
+        } else {
+            this.velocityX = 0;
+            if (!this.isJumping) this.state = 'idle';
+        }
 
         // Jump
-        if (keys['ArrowUp'] && !this.isJumping) {
+        if (input.jump && !this.isJumping) {
             this.velocityY = -this.jumpPower;
             this.isJumping = true;
+            this.state = 'jump';
+
+            // Jump particles
+            if (this.particleSystem) {
+                this.particleSystem.dust(this.x + this.width / 2, this.y + this.height);
+            }
         }
 
         // Apply gravity
         this.velocityY += this.gravity;
         this.y += this.velocityY;
         this.x += this.velocityX;
+
+        // Update state based on velocity
+        if (this.isJumping) {
+            this.state = this.velocityY < 0 ? 'jump' : 'fall';
+        }
 
         // Boundary check
         if (this.x < 0) this.x = 0;
@@ -85,6 +74,7 @@ class Player {
         }
 
         // Platform collision
+        let wasJumping = this.isJumping;
         this.isJumping = true;
         platforms.forEach(platform => {
             if (this.x < platform.x + platform.width &&
@@ -95,6 +85,11 @@ class Player {
                 this.y = platform.y - this.height;
                 this.velocityY = 0;
                 this.isJumping = false;
+
+                // Landing particles
+                if (wasJumping && this.particleSystem) {
+                    this.particleSystem.dust(this.x + this.width / 2, this.y + this.height);
+                }
             }
         });
 
@@ -111,5 +106,6 @@ class Player {
         this.velocityX = 0;
         this.velocityY = 0;
         this.isJumping = false;
+        this.state = 'idle';
     }
 }

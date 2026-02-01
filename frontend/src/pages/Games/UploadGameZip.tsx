@@ -6,6 +6,7 @@ import api from '../../utils/api';
 export default function UploadGameZip() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -19,11 +20,12 @@ export default function UploadGameZip() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!gameZip) {
-            alert('Please select a game ZIP file');
+            setError('Please select a game ZIP file');
             return;
         }
 
         setLoading(true);
+        setError(null);
         try {
             const data = new FormData();
             data.append('title', formData.title);
@@ -43,7 +45,8 @@ export default function UploadGameZip() {
             alert('Game uploaded successfully!');
             navigate('/admin/games');
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Failed to upload game');
+            const errorMessage = error.response?.data?.message || 'Failed to upload game';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -57,6 +60,33 @@ export default function UploadGameZip() {
                     Upload a complete HTML5 game as a ZIP file. The ZIP must contain an index.html file.
                 </p>
             </div>
+
+            {/* Security Error Modal */}
+            {error && (
+                <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 rounded-lg p-6">
+                    <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+                                🔒 Security Validation Failed
+                            </h3>
+                            <div className="text-red-700 dark:text-red-300 whitespace-pre-wrap font-mono text-sm">
+                                {error}
+                            </div>
+                            <button
+                                onClick={() => setError(null)}
+                                className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className="card max-w-3xl">
                 <div className="space-y-6">
