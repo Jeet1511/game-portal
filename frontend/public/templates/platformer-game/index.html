@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Adventure</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>Platform Adventure</h1>
+            <div class="stats">
+                <div class="stat">Score: <span id="score">0</span></div>
+                <div class="stat">Lives: <span id="lives">3</span></div>
+                <div class="stat">Level: <span id="level">1</span></div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" tabindex="0"></canvas>
+
+        <div class="controls">
+            <p>🎮 Arrow Keys: Move & Jump | R: Restart</p>
+        </div>
+
+        <div id="gameOver" class="modal hidden">
+            <div class="modal-content">
+                <h2>Game Over!</h2>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <button onclick="restartGame()">Play Again</button>
+            </div>
+        </div>
+
+        <div id="levelComplete" class="modal hidden">
+            <div class="modal-content">
+                <h2>Level Complete!</h2>
+                <p>Score: <span id="levelScore">0</span></p>
+                <button onclick="nextLevel()">Next Level</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/pixel-art.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/parallax.js"></script>
+    <script src="js/touch-controls.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/platform.js"></script>
+    <script src="js/coin.js"></script>
+    <script src="js/enemy.js"></script>
+    <script src="js/game.js"></script>
+</body>
+
+</html>

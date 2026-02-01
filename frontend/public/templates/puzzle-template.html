@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match-3 Puzzle Template</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        #gameContainer {
+            text-align: center;
+        }
+
+        #gameCanvas {
+            border: 4px solid #fff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            cursor: default;
+            outline: none;
+        }
+
+        #gameCanvas:focus {
+            border-color: #FFD700;
+        }
+
+        #info {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="gameContainer">
+        <div id="info">Score: <span id="score">0</span> | Moves: <span id="moves">20</span></div>
+        <canvas id="gameCanvas" width="600" height="600" tabindex="0"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Auto-focus canvas
+        canvas.focus();
+
+        const GRID_SIZE = 8;
+        const CELL_SIZE = canvas.width / GRID_SIZE;
+        const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
+
+        let score = 0;
+        let moves = 20;
+        let grid = [];
+        let selectedGem = null;
+
+        // Initialize grid
+        function initGrid() {
+            grid = [];
+            for (let row = 0; row < GRID_SIZE; row++) {
+                grid[row] = [];
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    grid[row][col] = Math.floor(Math.random() * COLORS.length);
+                }
+            }
+            // Remove initial matches
+            removeMatches();
+            fillEmpty();
+        }
+
+        // Draw grid
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    const x = col * CELL_SIZE;
+                    const y = row * CELL_SIZE;
+
+                    // Draw gem
+                    ctx.fillStyle = COLORS[grid[row][col]];
+                    ctx.beginPath();
+                    ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE / 2 - 5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Highlight selected
+                    if (selectedGem && selectedGem.row === row && selectedGem.col === col) {
+                        ctx.strokeStyle = '#FFD700';
+                        ctx.lineWidth = 4;
+                        ctx.stroke();
+                    }
+
+                    // Grid lines
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                }
+            }
+        }
+
+        // Check for matches
+        function findMatches() {
+            const matches = [];
+
+            // Horizontal matches
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE - 2; col++) {
+                    const gem = grid[row][col];
+                    if (gem === grid[row][col + 1] && gem === grid[row][col + 2]) {
+                        matches.push({ row, col }, { row, col: col + 1 }, { row, col: col + 2 });
+                    }
+                }
+            }
+
+            // Vertical matches
+            for (let col = 0; col < GRID_SIZE; col++) {
+                for (let row = 0; row < GRID_SIZE - 2; row++) {
+                    const gem = grid[row][col];
+                    if (gem === grid[row + 1][col] && gem === grid[row + 2][col]) {
+                        matches.push({ row, col }, { row: row + 1, col }, { row: row + 2, col });
+                    }
+                }
+            }
+
+            return matches;
+        }
+
+        // Remove matches
+        function removeMatches() {
+            const matches = findMatches();
+            if (matches.length > 0) {
+                score += matches.length * 10;
+                document.getElementById('score').textContent = score;
+
+                matches.forEach(match => {
+                    grid[match.row][match.col] = -1;
+                });
+                return true;
+            }
+            return false;
+        }
+
+        // Fill empty spaces
+        function fillEmpty() {
+            for (let col = 0; col < GRID_SIZE; col++) {
+                for (let row = GRID_SIZE - 1; row >= 0; row--) {
+                    if (grid[row][col] === -1) {
+                        // Move gems down
+                        for (let r = row; r > 0; r--) {
+                            grid[r][col] = grid[r - 1][col];
+                        }
+                        // Add new gem at top
+                        grid[0][col] = Math.floor(Math.random() * COLORS.length);
+                    }
+                }
+            }
+        }
+
+        // Swap gems
+        function swapGems(gem1, gem2) {
+            const temp = grid[gem1.row][gem1.col];
+            grid[gem1.row][gem1.col] = grid[gem2.row][gem2.col];
+            grid[gem2.row][gem2.col] = temp;
+        }
+
+        // Handle click
+        canvas.addEventListener('click', (e) => {
+            if (moves <= 0) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const col = Math.floor(x / CELL_SIZE);
+            const row = Math.floor(y / CELL_SIZE);
+
+            if (!selectedGem) {
+                selectedGem = { row, col };
+            } else {
+                // Check if adjacent
+                const rowDiff = Math.abs(selectedGem.row - row);
+                const colDiff = Math.abs(selectedGem.col - col);
+
+                if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) {
+                    swapGems(selectedGem, { row, col });
+
+                    if (removeMatches()) {
+                        moves--;
+                        document.getElementById('moves').textContent = moves;
+                        setTimeout(() => {
+                            fillEmpty();
+                            while (removeMatches()) {
+                                fillEmpty();
+                            }
+                            drawGrid();
+                        }, 300);
+                    } else {
+                        // Swap back if no match
+                        swapGems(selectedGem, { row, col });
+                    }
+                }
+                selectedGem = null;
+            }
+
+            drawGrid();
+
+            if (moves <= 0) {
+                setTimeout(() => {
+                    alert(`Game Over! Final Score: ${score}`);
+                }, 500);
+            }
+        });
+
+        // Start game
+        initGrid();
+        drawGrid();
+    </script>
+</body>
+
+</html>

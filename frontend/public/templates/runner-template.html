@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endless Runner Template</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #FFB347, #FFCC33);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        #gameCanvas {
+            border: 4px solid #333;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            outline: none;
+        }
+
+        #gameCanvas:focus {
+            border-color: #FFD700;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            cursor: default;
+            color: white;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="info">Score: <span id="score">0</span> | Press SPACE to Jump</div>
+    <canvas id="gameCanvas" width="800" height="400" tabindex="0"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Auto-focus canvas
+        canvas.focus();
+        canvas.addEventListener('click', () => canvas.focus());
+
+        let score = 0;
+        let gameSpeed = 5;
+        let gameOver = false;
+
+        // Player
+        const player = {
+            x: 100,
+            y: 280,
+            width: 40,
+            height: 40,
+            velocityY: 0,
+            gravity: 0.6,
+            jumpPower: 15,
+            isJumping: false,
+            color: '#FF6B6B'
+        };
+
+        // Obstacles
+        const obstacles = [];
+        let obstacleTimer = 0;
+
+        // Ground
+        const ground = {
+            y: 320,
+            height: 80,
+            color: '#8B4513'
+        };
+
+        // Clouds
+        const clouds = [];
+        for (let i = 0; i < 5; i++) {
+            clouds.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * 150,
+                width: 60 + Math.random() * 40,
+                height: 30
+            });
+        }
+
+        // Keyboard
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !player.isJumping && !gameOver) {
+                player.velocityY = -player.jumpPower;
+                player.isJumping = true;
+            }
+            if (e.code === 'Space' && gameOver) {
+                resetGame();
+            }
+        });
+
+        // Draw player
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            // Eyes
+            ctx.fillStyle = 'white';
+            ctx.fillRect(player.x + 10, player.y + 10, 8, 8);
+            ctx.fillRect(player.x + 22, player.y + 10, 8, 8);
+            ctx.fillStyle = 'black';
+            ctx.fillRect(player.x + 13, player.y + 13, 3, 3);
+            ctx.fillRect(player.x + 25, player.y + 13, 3, 3);
+        }
+
+        // Update player
+        function updatePlayer() {
+            player.velocityY += player.gravity;
+            player.y += player.velocityY;
+
+            // Ground collision
+            if (player.y >= ground.y - player.height) {
+                player.y = ground.y - player.height;
+                player.velocityY = 0;
+                player.isJumping = false;
+            }
+        }
+
+        // Draw ground
+        function drawGround() {
+            ctx.fillStyle = ground.color;
+            ctx.fillRect(0, ground.y, canvas.width, ground.height);
+
+            // Grass pattern
+            ctx.fillStyle = '#228B22';
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.fillRect(i, ground.y, 10, 5);
+            }
+        }
+
+        // Draw clouds
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            clouds.forEach(cloud => {
+                ctx.fillRect(cloud.x, cloud.y, cloud.width, cloud.height);
+                ctx.fillRect(cloud.x + 15, cloud.y - 10, cloud.width - 30, cloud.height);
+
+                cloud.x -= gameSpeed * 0.3;
+                if (cloud.x + cloud.width < 0) {
+                    cloud.x = canvas.width;
+                    cloud.y = Math.random() * 150;
+                }
+            });
+        }
+
+        // Spawn obstacles
+        function spawnObstacle() {
+            const height = 30 + Math.random() * 40;
+            obstacles.push({
+                x: canvas.width,
+                y: ground.y - height,
+                width: 30,
+                height: height,
+                color: '#654321'
+            });
+        }
+
+        // Draw obstacles
+        function drawObstacles() {
+            obstacles.forEach((obstacle, index) => {
+                ctx.fillStyle = obstacle.color;
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+
+                obstacle.x -= gameSpeed;
+
+                // Remove off-screen obstacles
+                if (obstacle.x + obstacle.width < 0) {
+                    obstacles.splice(index, 1);
+                    score += 10;
+                    document.getElementById('score').textContent = score;
+
+                    // Increase difficulty
+                    if (score % 100 === 0) {
+                        gameSpeed += 0.5;
+                    }
+                }
+
+                // Collision detection
+                if (player.x < obstacle.x + obstacle.width &&
+                    player.x + player.width > obstacle.x &&
+                    player.y < obstacle.y + obstacle.height &&
+                    player.y + player.height > obstacle.y) {
+                    gameOver = true;
+                }
+            });
+        }
+
+        // Reset game
+        function resetGame() {
+            score = 0;
+            gameSpeed = 5;
+            gameOver = false;
+            obstacles.length = 0;
+            player.y = 280;
+            player.velocityY = 0;
+            player.isJumping = false;
+            document.getElementById('score').textContent = score;
+        }
+
+        // Game loop
+        function gameLoop() {
+            // Sky
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawClouds();
+            drawGround();
+            drawPlayer();
+            drawObstacles();
+
+            if (!gameOver) {
+                updatePlayer();
+
+                // Spawn obstacles
+                obstacleTimer++;
+                if (obstacleTimer > 100 / gameSpeed * 10) {
+                    spawnObstacle();
+                    obstacleTimer = 0;
+                }
+
+                requestAnimationFrame(gameLoop);
+            } else {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#fff';
+                ctx.font = '48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 20);
+                ctx.font = '24px Arial';
+                ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 20);
+                ctx.fillText('Press SPACE to Restart', canvas.width / 2, canvas.height / 2 + 60);
+            }
+        }
+
+        gameLoop();
+    </script>
+</body>
+
+</html>

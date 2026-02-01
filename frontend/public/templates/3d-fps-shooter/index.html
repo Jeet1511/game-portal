@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D FPS Shooter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="game-container">
+        <div class="hud">
+            <div class="hud-item">
+                <span class="hud-label">HEALTH:</span>
+                <div class="health-bar">
+                    <div class="health-fill" id="healthFill"></div>
+                </div>
+                <span id="healthText">100</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">AMMO:</span>
+                <span id="ammo">30/120</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">SCORE:</span>
+                <span id="score">0</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">ENEMIES:</span>
+                <span id="enemies">0</span>
+            </div>
+            <div class="hud-item" id="mouseStatus" style="color: #ff0;">
+                <span class="hud-label">🖱️ MOUSE:</span>
+                <span id="mouseStatusText">Click to Lock</span>
+            </div>
+        </div>
+
+        <!-- Crosshair -->
+        <div class="crosshair"></div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="controls-info">
+            <p>🎮 WASD: Move | Mouse: Look | Click: Shoot | R: Reload | ESC: Pause</p>
+        </div>
+
+        <!-- Pause Menu -->
+        <div id="pauseMenu" class="menu hidden">
+            <h2>PAUSED</h2>
+            <p style="color: #0f0; margin-bottom: 20px;">Mouse is unlocked - you can use it freely!</p>
+            <p style="font-size: 18px; margin-bottom: 30px;">Click canvas to resume playing</p>
+            <button onclick="resumeGame()">Resume Game</button>
+            <button onclick="restartGame()">Restart</button>
+        </div>
+
+        <div id="gameOverMenu" class="menu hidden">
+            <h2>GAME OVER</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/enemy.js"></script>
+    <script src="js/weapon.js"></script>
+    <script src="js/game.js"></script>
+</body>
+
+</html>

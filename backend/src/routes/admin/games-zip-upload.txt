@@ -1,0 +1,77 @@
+/**
+ * @route   POST /api/admin/games/upload-zip
+ * @desc    Upload HTML game as ZIP file
+ * @access  Private (Admin)
+ */
+router.post(
+    '/upload-zip',
+    verifyToken,
+    upload.fields([
+        { name: 'thumbnail', maxCount: 1 },
+        { name: 'gameZip', maxCount: 1 }
+    ]),
+    async (req: AuthRequest, res, next) => {
+        try {
+            const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+            const { title, description, category, difficulty, tags } = req.body;
+
+            if (!files?.gameZip?.[0]) {
+                throw new AppError('Game ZIP file is required', 400);
+            }
+
+            if (!title || !description || !category) {
+                throw new AppError('Title, description, and category are required', 400);
+            }
+
+            // Create game document first to get ID
+            const game = new Game({
+                title,
+                description,
+                category,
+                difficulty: difficulty || 'medium',
+                tags: tags ? JSON.parse(tags) : [],
+                status: 'draft',
+            });
+
+            await game.save();
+
+            try {
+                // Upload ZIP and extract
+                const gameUrl = await gameUploadService.uploadGameZip(
+                    files.gameZip[0],
+                    game._id.toString()
+                );
+
+                // Upload thumbnail if provided
+                let thumbnailUrl = '';
+                if (files?.thumbnail?.[0]) {
+                    thumbnailUrl = await uploadFile(
+                        files.thumbnail[0].buffer,
+                        files.thumbnail[0].originalname,
+                        files.thumbnail[0].mimetype
+                    );
+                }
+
+                // Update game with URLs
+                game.gameUrl = gameUrl;
+                game.thumbnailUrl = thumbnailUrl;
+                game.status = 'active';
+                await game.save();
+
+                res.status(201).json({
+                    success: true,
+                    data: { game },
+                    message: 'Game uploaded successfully',
+                });
+            } catch (error) {
+                // Clean up game document if upload fails
+                await game.deleteOne();
+                throw error;
+            }
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+export default router;
