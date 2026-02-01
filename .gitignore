@@ -46,3 +46,4 @@ docker-compose.override.yml
 Thumbs.db
 .env 
 .env-example 
+.env.example
