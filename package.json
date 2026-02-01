@@ -1,0 +1,35 @@
+{
+    "name": "game-portal",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Production-ready web platform for HTML5 games with Discord integration",
+    "author": "Your Name",
+    "license": "MIT",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "dev": "turbo run dev",
+        "dev:web": "turbo run dev --filter=web",
+        "dev:admin": "turbo run dev --filter=admin",
+        "dev:server": "turbo run dev --filter=server",
+        "build": "turbo run build",
+        "test": "turbo run test",
+        "lint": "turbo run lint",
+        "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+        "clean": "turbo run clean && rm -rf node_modules",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "prettier": "^3.1.0",
+        "turbo": "^1.11.0",
+        "typescript": "^5.3.0"
+    },
+    "engines": {
+        "node": ">=20.0.0",
+        "npm": ">=10.0.0"
+    }
+}
